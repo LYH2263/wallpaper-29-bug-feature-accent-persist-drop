@@ -34,9 +34,7 @@ def build_run_snapshot(
     main_calc: dict,
     feature_calc: dict,
 ) -> dict:
-    from app.services.feature_persist import merge_accent_into_main
-
-    raw = {
+    return {
         "schema": "feature_v1",
         "wall_id": wall["id"],
         "roll_id": roll["id"],
@@ -58,5 +56,3 @@ def build_run_snapshot(
         "main": {k: main_calc[k] for k in CALC_KEYS},
         "feature": {k: feature_calc[k] for k in CALC_KEYS},
     }
-    # Preview response keeps full calc; only the stored snapshot is reshaped.
-    return merge_accent_into_main(raw)
