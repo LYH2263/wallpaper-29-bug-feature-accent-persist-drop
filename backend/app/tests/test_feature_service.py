@@ -90,6 +90,49 @@ def test_list_runs_wall_filter(db_env):
     assert wall1[0]["wall_id"] == 1
 
 
+def test_legacy_merged_row_is_split_back_on_read(db_env):
+    # Snapshot shape written by the old merge-on-persist build.
+    corrupted = {
+        "schema": "feature_v1",
+        "wall_id": 1,
+        "roll_id": 1,
+        "wall": {"id": 1, "name": "主卧一圈", "perimeter": 16.0, "height": 2.7},
+        "roll": {"id": 1, "name": "素色53", "width": 0.53, "length": 10.0, "pattern_cm": 0},
+        "feature_width": 3.2,
+        "feature_height": 2.4,
+        "main": {"drops": 31, "drop_len_m": 2.7, "pattern_m": 0.0,
+                 "strips_per_roll": 3, "rolls": 13},
+        "feature": {"drops": 0, "drop_len_m": 2.4, "pattern_m": 0.0,
+                    "strips_per_roll": 4, "rolls": 0},
+        "list_main_rolls": 11,
+        "list_feature_rolls": 2,
+    }
+    history.insert_run(1, 1, corrupted, "")
+
+    snap = history.list_runs(100)[0]["result"]
+    assert snap["main"]["rolls"] == 11
+    assert snap["feature"]["rolls"] == 2
+    assert snap["feature"]["drops"] == 7
+    assert "list_main_rolls" not in snap
+    assert "list_feature_rolls" not in snap
+
+    # Repair is read-only and idempotent across repeated opens.
+    again = history.list_runs(100)[0]["result"]
+    assert again["main"]["rolls"] == 11
+    assert again["feature"] == snap["feature"]
+
+
+def test_zero_width_save_round_trips_as_full_wall_main(db_env):
+    run_estimate(1, 1, True, "", 0.0, 0.0)
+    snap = history.list_runs(100)[0]["result"]
+    assert snap["schema"] == "feature_v1"
+    assert snap["feature"] == {
+        "drops": 0, "drop_len_m": 0.0, "pattern_m": 0.0,
+        "strips_per_roll": 0, "rolls": 0,
+    }
+    assert snap["main"] == roll_count(16.0, 2.7, 0.53, 10.0, 0)
+
+
 def test_module_validation_without_db():
     wall = {"height": 2.7}
     roll = {"width": 0.53, "length": 10.0, "pattern_cm": 0}

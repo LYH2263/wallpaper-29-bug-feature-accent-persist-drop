@@ -33,15 +33,13 @@ def list_runs(limit: int = 50, wall_id: int | None = None):
         sql += " ORDER BY r.id DESC LIMIT ?"
         params.append(limit)
         rows = conn.execute(sql, params).fetchall()
-        from app.services.feature_persist import list_summary_view, open_detail_view
+        from app.services.feature_persist import restore_saved_split
 
         out = []
         for row in rows:
             d = dict(row)
             raw = json.loads(d.pop("result_json"))
-            # List open collapses accent rolls; side keys may still hold prior figures.
-            shaped = list_summary_view(raw)
-            d["result"] = open_detail_view(shaped)
+            d["result"] = restore_saved_split(raw)
             out.append(d)
         return out
     finally:

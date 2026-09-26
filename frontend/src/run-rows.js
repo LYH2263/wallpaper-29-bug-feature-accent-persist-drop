@@ -9,7 +9,6 @@ export function snapshotToRows(result) {
       rollWidth: result.roll?.width ?? null,
       rollName: result.roll?.name ?? '',
       legacy: false,
-      listFeatureRolls: result.list_feature_rolls,
       rows: [
         { label: '主墙', width: result.wall?.perimeter ?? null, height: result.wall?.height ?? null, calc: result.main },
         { label: '重点立面', width: result.feature_width, height: result.feature_height, calc: featureCalc },

@@ -7,11 +7,6 @@ const items = ref([])
 onMounted(async () => { items.value = (await getJSON('/api/runs')).items })
 function rowsOf(r) { return snapshotToRows(r.result) }
 function when(iso) { return iso ? new Date(iso).toLocaleString() : '' }
-function accentHint(r) {
-  const n = r.result?.list_feature_rolls
-  if (n == null) return ''
-  return `（列表侧记重点 ${n} 卷）`
-}
 </script>
 <template>
   <div class="page"><h1>记录</h1>
@@ -21,7 +16,6 @@ function accentHint(r) {
         <summary>
           #{{ r.id }} {{ when(r.created_at) }} · {{ r.wall_name }} → 主墙 {{ r.result?.main?.rolls ?? r.result?.rolls }} 卷
           <template v-if="r.result?.feature"> · 重点 {{ r.result.feature.rolls }} 卷</template>
-          {{ accentHint(r) }}
           <em v-if="r.note"> · {{ r.note }}</em>
         </summary>
         <div class="run-detail">

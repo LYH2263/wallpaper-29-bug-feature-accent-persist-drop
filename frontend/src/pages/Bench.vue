@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { getJSON, postJSON } from '../api'
 import { liveToRows } from '../run-rows'
 import DropStripBar from '../components/DropStripBar.vue'
@@ -8,6 +8,7 @@ const walls = ref([]); const rolls = ref([])
 const wallId = ref(1); const rollId = ref(1)
 const featureWidth = ref(0); const featureHeight = ref(0)
 const out = ref(null); const errorMsg = ref(''); const savedTip = ref('')
+const selectedWallHeight = computed(() => walls.value.find(w => w.id === wallId.value)?.height ?? null)
 onMounted(async () => {
   walls.value = (await getJSON('/api/walls')).items.filter(w => w.data_quality==='clean')
   rolls.value = (await getJSON('/api/rolls')).items.filter(r => r.data_quality==='clean')
@@ -16,6 +17,11 @@ onMounted(async () => {
 })
 async function run(save) {
   errorMsg.value = ''; savedTip.value = ''
+  const fh = Number(featureHeight.value) || 0
+  if (selectedWallHeight.value != null && fh > selectedWallHeight.value) {
+    errorMsg.value = `重点立面高不得超过主墙高度 ${selectedWallHeight.value} m`
+    return
+  }
   try {
     const params = new URLSearchParams({
       wall_id: wallId.value, roll_id: rollId.value,
@@ -47,7 +53,8 @@ async function run(save) {
       <input v-model.number="featureWidth" type="number" min="0" step="0.01">
     </label>
     <label>重点立面高(m)
-      <input v-model.number="featureHeight" type="number" min="0" step="0.01">
+      <input v-model.number="featureHeight" type="number" min="0" step="0.01"
+             :max="selectedWallHeight ?? undefined">
     </label>
   </div>
   <button @click="run(false)">试算</button><button @click="run(true)">保存</button>
